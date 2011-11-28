@@ -22,13 +22,6 @@ NSInteger const DCTManagedObjectViewControllerRelationshipSection = 2;
 
 #pragma mark - NSObject
 
-- (void)dealloc {
-	[attributes release], attributes = nil;
-	[relationships release], relationships = nil;
-	[managedObject release], managedObject = nil;
-    [super dealloc];
-}
-
 - (id)init {
 	return [self initWithStyle:UITableViewStyleGrouped];
 }
@@ -63,6 +56,35 @@ NSInteger const DCTManagedObjectViewControllerRelationshipSection = 2;
 	
 	if ([self isViewLoaded])
 		[self.tableView reloadData];
+}
+
+#pragma mark - Editing
+
+@synthesize textField = _textField;
+- (UITextField *)textField;
+{
+    if (!_textField)
+    {
+        _textField = [[UITextField alloc] init];
+        _textField.borderStyle = UITextBorderStyleNone;
+        _textField.returnKeyType = UIReturnKeyDone;
+        _textField.delegate = self;
+    }
+    return _textField;
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+    NSString *attrName = [attributes objectAtIndex:textField.tag];
+    [self.managedObject setValue:textField.text forKey:attrName];
+    [self.tableView reloadData];
+    
+    if ([self.managedObject.managedObjectContext save:NULL])
+    {
+        [textField removeFromSuperview];
+    }
+    
+    return NO;
 }
 
 #pragma mark - Table view data source
@@ -164,7 +186,40 @@ NSInteger const DCTManagedObjectViewControllerRelationshipSection = 2;
 		}
 		
 	}
-	
+	else if (indexPath.section == DCTManagedObjectViewControllerAttributeSection)
+    {
+        NSString *attrName = [attributes objectAtIndex:indexPath.row];
+		NSAttributeDescription *attribute = [[[self.managedObject entity] attributesByName] objectForKey:attrName];
+		
+        if (attribute.attributeType == NSStringAttributeType)
+        {
+            UILabel *label = [[tv cellForRowAtIndexPath:indexPath] detailTextLabel];
+            UITextField *textField = self.textField;
+            textField.backgroundColor = label.backgroundColor;
+            textField.text = label.text;
+            textField.font = label.font;
+            textField.textColor = label.textColor;
+            
+            CGRect frame = label.frame;
+            frame.size.width = label.superview.bounds.size.width - frame.origin.x;
+            textField.frame = frame;
+            [label.superview addSubview:textField];
+            
+            textField.tag = indexPath.row;
+            [textField becomeFirstResponder];
+        }
+    }
+}
+
+#pragma mark - Lifecycle
+
+- (void)dealloc {
+	[attributes release], attributes = nil;
+	[relationships release], relationships = nil;
+	[managedObject release], managedObject = nil;
+    [_textField release];
+    
+    [super dealloc];
 }
 
 @end

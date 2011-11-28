@@ -9,11 +9,14 @@
 #import <UIKit/UIKit.h>
 #import <CoreData/CoreData.h>
 
-@interface DCTManagedObjectViewController : UITableViewController {
+@interface DCTManagedObjectViewController : UITableViewController <UITextFieldDelegate>
+{
 	NSArray *relationships;
 	NSArray *attributes;
 }
 
 @property (nonatomic, retain) NSManagedObject *managedObject;
+
+@property (nonatomic, retain, readonly) UITextField *textField;
 
 @end
