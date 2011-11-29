@@ -79,6 +79,22 @@
     return cell;
 }
 
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if (editingStyle == UITableViewCellEditingStyleDelete)
+    {
+        NSManagedObject *object = [relatedObjects objectAtIndex:indexPath.row];
+        [object.managedObjectContext deleteObject:object];
+        [object.managedObjectContext save:NULL];
+        
+        NSMutableArray *objects = [relatedObjects mutableCopy];
+        [objects removeObjectAtIndex:indexPath.row];
+        [relatedObjects release]; relatedObjects = objects;
+        
+        [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    }
+}
+
 #pragma mark - Table view delegate
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
