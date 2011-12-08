@@ -220,7 +220,9 @@ NSInteger const DCTManagedObjectViewControllerRelationshipSection = 2;
             case NSDateAttributeType:
             {
                 DCTDatePickerViewController *detail = [[DCTDatePickerViewController alloc] init];
-                detail.date = [self.managedObject valueForKey:attrName];
+                NSDate *date = [self.managedObject valueForKey:attrName];
+                if (!date) date = [NSDate date];
+                detail.date = date;
                 
                 UIBarButtonItem *save = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSave target:self action:@selector(saveDate)];
                 detail.navigationItem.rightBarButtonItem = save;
