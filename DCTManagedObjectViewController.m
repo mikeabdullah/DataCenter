@@ -10,8 +10,11 @@ NSInteger const DCTManagedObjectViewControllerAttributeSection = 1;
 NSInteger const DCTManagedObjectViewControllerRelationshipSection = 2;
 
 #import "DCTManagedObjectViewController.h"
+
+#import "DCTDatePickerViewController.h"
 #import "DCTManagedObjectRelationshipsViewController.h"
 #import "NSManagedObject+DCTNiceDescription.h"
+
 
 @interface DCTManagedObjectViewController ()
 @end
@@ -134,8 +137,10 @@ NSInteger const DCTManagedObjectViewControllerRelationshipSection = 2;
 		cell.textLabel.text = attributeName;
 		cell.detailTextLabel.text = [[managedObject valueForKey:attributeName] description];
 		
-		cell.selectionStyle = UITableViewCellSelectionStyleNone;
-		cell.accessoryType = UITableViewCellAccessoryNone;
+		BOOL isDate = [[[managedObject.entity attributesByName] objectForKey:attributeName] attributeType] == NSDateAttributeType;
+        
+		cell.selectionStyle = (isDate ? UITableViewCellSelectionStyleBlue : UITableViewCellSelectionStyleNone);
+        cell.accessoryType = (isDate ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone);
 	}
 	
 	if ((NSInteger)indexPath.section == DCTManagedObjectViewControllerRelationshipSection) {
@@ -191,24 +196,53 @@ NSInteger const DCTManagedObjectViewControllerRelationshipSection = 2;
         NSString *attrName = [attributes objectAtIndex:indexPath.row];
 		NSAttributeDescription *attribute = [[[self.managedObject entity] attributesByName] objectForKey:attrName];
 		
-        if (attribute.attributeType == NSStringAttributeType)
+        switch (attribute.attributeType)
         {
-            UILabel *label = [[tv cellForRowAtIndexPath:indexPath] detailTextLabel];
-            UITextField *textField = self.textField;
-            textField.backgroundColor = label.backgroundColor;
-            textField.text = label.text;
-            textField.font = label.font;
-            textField.textColor = label.textColor;
-            
-            CGRect frame = label.frame;
-            frame.size.width = label.superview.bounds.size.width - frame.origin.x;
-            textField.frame = frame;
-            [label.superview addSubview:textField];
-            
-            textField.tag = indexPath.row;
-            [textField becomeFirstResponder];
+            case NSStringAttributeType:
+            {
+                UILabel *label = [[tv cellForRowAtIndexPath:indexPath] detailTextLabel];
+                UITextField *textField = self.textField;
+                textField.backgroundColor = label.backgroundColor;
+                textField.text = label.text;
+                textField.font = label.font;
+                textField.textColor = label.textColor;
+                
+                CGRect frame = label.frame;
+                frame.size.width = label.superview.bounds.size.width - frame.origin.x;
+                textField.frame = frame;
+                [label.superview addSubview:textField];
+                
+                textField.tag = indexPath.row;
+                [textField becomeFirstResponder];
+                break;
+            }
+                
+            case NSDateAttributeType:
+            {
+                DCTDatePickerViewController *detail = [[DCTDatePickerViewController alloc] init];
+                detail.date = [self.managedObject valueForKey:attrName];
+                
+                UIBarButtonItem *save = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemSave target:self action:@selector(saveDate)];
+                detail.navigationItem.rightBarButtonItem = save;
+                [save release];
+                
+                [self.navigationController pushViewController:detail animated:YES];
+                [detail release];
+                
+                _editingDateRow = indexPath.row;
+            }
         }
     }
+}
+
+- (void)saveDate;
+{
+    NSString *attrName = [attributes objectAtIndex:_editingDateRow];
+    
+    [self.managedObject setValue:[(DCTDatePickerViewController *)self.navigationController.topViewController date]
+                          forKey:attrName];
+    
+    [self.tableView reloadData];
 }
 
 #pragma mark - Lifecycle

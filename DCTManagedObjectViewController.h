@@ -13,6 +13,7 @@
 {
 	NSArray *relationships;
 	NSArray *attributes;
+    NSUInteger _editingDateRow;
 }
 
 @property (nonatomic, retain) NSManagedObject *managedObject;
